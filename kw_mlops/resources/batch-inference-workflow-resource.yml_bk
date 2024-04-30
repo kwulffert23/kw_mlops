@@ -19,8 +19,21 @@ resources:
         - job_cluster_key: batch_inference_job_cluster
           <<: *new_cluster
       tasks:
+        - task_key: input_inference
+          job_cluster_key: batch_inference_job_cluster
+          notebook_task:
+            notebook_path: ../deployment/batch_inference/notebooks/FeatureInput.py
+            base_parameters:
+              env: ${bundle.target}
+              output_table_name: ${bundle.target}.kw_mlops.feature_store_inference_input
+              model_name: ${bundle.target}.kw_mlops.${var.model_name}
+              # git source information of current ML resource deployment. It will be persisted as part of the workflow run
+              git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+
         - task_key: batch_inference
           job_cluster_key: batch_inference_job_cluster
+          depends_on:
+            - task_key: input_inference
           notebook_task:
             notebook_path: ../deployment/batch_inference/notebooks/BatchInference.py
             base_parameters:
